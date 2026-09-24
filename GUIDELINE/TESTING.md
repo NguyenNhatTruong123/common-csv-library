@@ -36,7 +36,7 @@ SKU-1023,Desk organizer,Office,PaperCo,1,11.20,10%,USD,SUP-01,WH-NORTH,2026-09-1
 SKU-1024,Travel adapter,Electronics,ConnectX,2,13.45,8%,USD,SUP-03,WH-CENTRAL,2026-09-12,B-260912,International
 ```
 
-You can replace this data with your own. The convenience method recognizes common English, Vietnamese, and Japanese header names. If your headers use a different language or naming scheme, see the metadata example below.
+You can replace this data with your own. The convenience method recognizes common English, Vietnamese, Japanese, and Korean header names. Additional sample CSV files for Vietnamese, Japanese, and Korean are included in `manual-test/` as `invoice-vi.csv`, `invoice-ja.csv`, and `invoice-ko.csv`.
 
 ### Optional: Ask an AI assistant to create the manual test files
 
@@ -47,42 +47,58 @@ In this Java 17+ Maven repository, create a runnable end-to-end manual test setu
 
 Create these files:
 1. manual-test/pom.xml: a small Maven project that depends on io.github.commoncsv:common-csv-library:1.0.0-SNAPSHOT and uses exec-maven-plugin 3.3.0. Configure ManualCsvRun as the main class and configure manual-test/src as the source directory.
-2. manual-test/src/ManualCsvRun.java: a Java main class that calls CsvInvoiceCalculator.processCsv(InputStream), reads manual-test/invoice.csv when launched from the repository root or invoice.csv when launched from manual-test/, and writes invoice-results.xlsx next to the input CSV. If neither input path exists, print a helpful error showing both paths checked.
-3. manual-test/invoice.csv: a valid UTF-8 comma-separated CSV with at least 20 product rows and several extra informational columns (for example SKU, category, brand, currency, supplier, warehouse, order date, batch, and note), in addition to recognizable Product, Quantity, Unit Price, and VAT headers. Include at least one correctly quoted field containing a comma.
+2. manual-test/src/ManualCsvRun.java: a Java main class that calls CsvInvoiceCalculator.processCsv(InputStream), processes every `.csv` file in manual-test/ (or the current directory when launched from manual-test/), and writes a matching `-results.xlsx` file beside each input. It may also accept CSV paths as command-line arguments and should report clearly when no CSV files are found.
+3. manual-test/invoice.csv: a valid UTF-8 comma-separated English CSV with at least 20 product rows, several extra informational columns, recognizable Product, Quantity, Unit Price, and VAT headers, and at least one correctly quoted field containing a comma.
+4. manual-test/invoice-vi.csv, manual-test/invoice-ja.csv, and manual-test/invoice-ko.csv: valid UTF-8 sample CSVs with Vietnamese, Japanese, and Korean headers respectively, at least 20 product rows in each file, and extra informational columns. Keep all four CSV samples substantial enough for end-to-end review; do not create short three-row examples.
 
 Do not edit the library's production code, unit tests, README, or other files. Make sure the paths and Maven source-directory configuration match the files you create. Summarize the files created and give the exact Maven command to run from the repository root. Do not run build or tests unless I ask.
+
+Important file-writing constraint: create or overwrite each requested file as one complete file. Never append a second copy of a class, imports, XML document, CSV header, or CSV rows to an existing file. `manual-test/src/ManualCsvRun.java` must contain exactly one `public class ManualCsvRun` and exactly one `main` method. Before finishing, inspect the generated file and confirm that the Java source has one balanced class body and no content after its final closing brace.
 ```
 
 You can compare the generated files with the examples below and review the paths, headers, row count, and expected totals before running them.
 
 ### 2. Create the runner program
 
-Create `manual-test/src/ManualCsvRun.java`:
+The runner processes every CSV file in `manual-test/` and writes a matching XLSX file beside each CSV. It can also be recreated as follows in `manual-test/src/ManualCsvRun.java`:
 
 ```java
 import io.github.commoncsv.CsvInvoiceCalculator;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class ManualCsvRun {
     public static void main(String[] args) throws Exception {
-        Path inputPath = Path.of("manual-test", "invoice.csv");
-        if (!Files.exists(inputPath)) {
-            inputPath = Path.of("invoice.csv");
+        List<Path> inputs;
+        if (args.length > 0) {
+            inputs = java.util.Arrays.stream(args).map(Path::of).toList();
+        } else {
+            Path inputDirectory = Files.isDirectory(Path.of("manual-test")) ? Path.of("manual-test") : Path.of(".");
+            try (Stream<Path> files = Files.list(inputDirectory)) {
+                inputs = files.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".csv"))
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                    .toList();
+            }
         }
-        if (!Files.exists(inputPath)) {
-            throw new java.nio.file.NoSuchFileException(
-                "CSV not found. Looked for manual-test/invoice.csv and invoice.csv from "
-                    + Path.of("").toAbsolutePath());
+        if (inputs.isEmpty()) {
+            throw new java.nio.file.NoSuchFileException("No CSV input files found in manual-test/ or the current directory.");
         }
-        Path outputPath = inputPath.resolveSibling("invoice-results.xlsx");
 
-        try (InputStream input = Files.newInputStream(inputPath)) {
-            byte[] result = CsvInvoiceCalculator.processCsv(input);
-            Files.write(outputPath, result);
+        for (Path inputPath : inputs) {
+            String fileName = inputPath.getFileName().toString();
+            String baseName = fileName.substring(0, fileName.length() - ".csv".length());
+            Path outputPath = inputPath.resolveSibling(baseName + "-results.xlsx");
+            try (InputStream input = Files.newInputStream(inputPath)) {
+                byte[] result = CsvInvoiceCalculator.processCsv(input);
+                Files.write(outputPath, result);
+            }
+            System.out.println("Created: " + outputPath.toAbsolutePath());
         }
-        System.out.println("Created: " + outputPath.toAbsolutePath());
     }
 }
 ```
@@ -138,11 +154,13 @@ Run the program from the library root. No `-Dexec.mainClass` argument is needed,
 mvn -f manual-test/pom.xml compile exec:java
 ```
 
-On success, Maven prints the output path. Open `manual-test/invoice-results.xlsx` with Excel, LibreOffice Calc, or another XLSX-compatible application.
+On success, Maven prints the path to each generated workbook. Open `manual-test/invoice-results.xlsx`, `manual-test/invoice-vi-results.xlsx`, `manual-test/invoice-ja-results.xlsx`, and `manual-test/invoice-ko-results.xlsx` with Excel, LibreOffice Calc, or another XLSX-compatible application.
 
 ### 4. Review the output
 
-For the sample CSV, the workbook should contain 24 product rows and 15 columns: the original 13 input columns plus `Total before tax` and `Total after tax`. The final grand-total row should show `467.66` before tax and `503.86` after tax. Check that `SKU`, `Category`, `Brand`, `Currency`, `Supplier`, `Warehouse`, `Order Date`, `Batch`, and `Note` are still present. Some notes contain quoted commas in the CSV; each should remain in a single cell without shifting columns.
+For the English sample CSV, the workbook should contain 24 product rows and 15 columns: the original 13 input columns plus `Total before tax` and `Total after tax`. The final grand-total row should show `467.66` before tax and `503.86` after tax. Check that all original informational columns are still present. Some notes contain quoted commas in the CSV; each should remain in a single cell without shifting columns. The Korean workbook should use Korean calculation and total labels; the Japanese, Vietnamese, and English workbooks should use labels in their corresponding languages.
+
+The language-specific samples should also contain at least 20 product rows. Calculate and record each file's expected grand totals from the generated data before reviewing the workbooks; do not reuse totals from shorter sample files.
 
 To check validation, change a quantity to `0`, a price to `abc`, or VAT to `150`. The program should report the CSV row and invalid field, and should not produce a successful workbook.
 

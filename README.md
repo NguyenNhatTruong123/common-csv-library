@@ -9,7 +9,7 @@ A small Java 17+ library that validates tabular invoice data, calculates each it
 
 ## Quick use: CSV with recognizable headers
 
-The convenience method accepts UTF-8 CSV input (including UTF-8 BOM) separated by comma, semicolon, or tab. It detects common English, Vietnamese, and Japanese names for the required columns and returns XLSX bytes.
+The convenience method accepts UTF-8 CSV input (including UTF-8 BOM) separated by comma, semicolon, or tab. It detects common English, Vietnamese, Japanese, and Korean names for the required columns and returns XLSX bytes.
 
 ```java
 import io.github.commoncsv.CsvInvoiceCalculator;
@@ -41,7 +41,7 @@ var labels = OutputLabels.japanese();
 byte[] xlsx = CsvInvoiceCalculator.process(table, columns, labels);
 ```
 
-`OutputLabels.english()`, `.vietnamese()`, and `.japanese()` are included. Supply a custom `new OutputLabels(...)` for any other language or customer terminology. Input columns are copied as written; only the two appended calculation headers and the grand-total labels use `OutputLabels`.
+`OutputLabels.english()`, `.vietnamese()`, `.japanese()`, and `.korean()` are included. Supply a custom `new OutputLabels(...)` for any other language or customer terminology. Input columns are copied as written; only the two appended calculation headers and the grand-total labels use `OutputLabels`.
 
 ## Calculation and validation rules
 
