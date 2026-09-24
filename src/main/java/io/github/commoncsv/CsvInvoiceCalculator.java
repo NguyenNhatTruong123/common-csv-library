@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
@@ -143,6 +144,16 @@ public final class CsvInvoiceCalculator {
             header.createCell(width).setCellValue(labels.beforeTax());
             header.createCell(width + 1).setCellValue(labels.afterTax());
 
+            CellStyle totalHeader = workbook.createCellStyle();
+            totalHeader.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            totalHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            totalHeader.setFont(createBoldFont(workbook, IndexedColors.WHITE));
+            totalHeader.setAlignment(HorizontalAlignment.CENTER);
+            totalHeader.setWrapText(true);
+
+            header.getCell(width).setCellStyle(totalHeader);
+            header.getCell(width + 1).setCellStyle(totalHeader);
+
             for (int r = 0; r < data.rows().size(); r++) {
                 Row row = sheet.createRow(r + 1);
                 List<String> source = data.rows().get(r);
@@ -156,32 +167,75 @@ public final class CsvInvoiceCalculator {
             }
 
             int totalRowIndex = data.rows().size() + 1;
-            Row total = sheet.createRow(totalRowIndex);
+            Row beforeTotal = sheet.createRow(totalRowIndex);
+            Row afterTotal = sheet.createRow(totalRowIndex + 1);
 
-            total.createCell(0).setCellValue(labels.totalBeforeTax());
-            total.createCell(1).setCellValue(sumBefore.setScale(2, RoundingMode.HALF_UP).doubleValue());
-            total.createCell(2).setCellValue(labels.totalAfterTax());
-            total.createCell(3).setCellValue(sumAfter.setScale(2, RoundingMode.HALF_UP).doubleValue());
+            int summaryLabelStart = Math.max(0, width - 2);
+            beforeTotal.createCell(summaryLabelStart).setCellValue(labels.totalBeforeTax());
+            afterTotal.createCell(summaryLabelStart).setCellValue(labels.totalAfterTax());
+            beforeTotal.createCell(width).setCellValue(sumBefore.setScale(2, RoundingMode.HALF_UP).doubleValue());
+            afterTotal.createCell(width + 1).setCellValue(sumAfter.setScale(2, RoundingMode.HALF_UP).doubleValue());
+
+            sheet.addMergedRegion(new CellRangeAddress(totalRowIndex, totalRowIndex, summaryLabelStart, width - 1));
+            sheet.addMergedRegion(new CellRangeAddress(totalRowIndex + 1, totalRowIndex + 1, summaryLabelStart, width - 1));
 
             CellStyle money = workbook.createCellStyle();
             money.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
 
+            CellStyle itemTotal = workbook.createCellStyle();
+            itemTotal.cloneStyleFrom(money);
+            itemTotal.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+            itemTotal.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            CellStyle grandTotal = workbook.createCellStyle();
+            grandTotal.cloneStyleFrom(money);
+            grandTotal.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            grandTotal.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            grandTotal.setFont(createBoldFont(workbook, IndexedColors.BLACK));
+
+            CellStyle grandTotalLabel = workbook.createCellStyle();
+            grandTotalLabel.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            grandTotalLabel.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            grandTotalLabel.setFont(createBoldFont(workbook, IndexedColors.BLACK));
+            grandTotalLabel.setAlignment(HorizontalAlignment.RIGHT);
+
             for (int r = 1; r <= data.rows().size(); r++) {
-                sheet.getRow(r).getCell(width).setCellStyle(money);
-                sheet.getRow(r).getCell(width + 1).setCellStyle(money);
+                sheet.getRow(r).getCell(width).setCellStyle(itemTotal);
+                sheet.getRow(r).getCell(width + 1).setCellStyle(itemTotal);
             }
 
-            total.getCell(1).setCellStyle(money);
-            total.getCell(3).setCellStyle(money);
+            beforeTotal.getCell(width).setCellStyle(grandTotal);
+            afterTotal.getCell(width + 1).setCellStyle(grandTotal);
+            beforeTotal.getCell(summaryLabelStart).setCellStyle(grandTotalLabel);
+            afterTotal.getCell(summaryLabelStart).setCellStyle(grandTotalLabel);
+
+            for (int c = summaryLabelStart + 1; c < width; c++) {
+                beforeTotal.createCell(c).setCellStyle(grandTotalLabel);
+                afterTotal.createCell(c).setCellStyle(grandTotalLabel);
+            }
+
+            beforeTotal.setHeightInPoints(22);
+            afterTotal.setHeightInPoints(22);
 
             for (int c = 0; c < width + 2; c++) {
                 sheet.autoSizeColumn(c);
             }
 
+            sheet.setColumnWidth(width, 20 * 256);
+            sheet.setColumnWidth(width + 1, 20 * 256);
+
             workbook.write(out);
 
             return out.toByteArray();
         }
+    }
+
+    private static Font createBoldFont(Workbook workbook, IndexedColors color) {
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 12);
+        font.setColor(color.getIndex());
+        return font;
     }
 
     private static ColumnMapping detectMapping(List<String> headers) {
