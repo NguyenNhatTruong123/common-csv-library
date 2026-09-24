@@ -54,4 +54,13 @@ public record OutputLabels(String beforeTax, String afterTax, String totalBefore
     public static OutputLabels japanese() {
         return new OutputLabels("税抜合計", "税込合計", "税抜総合計", "税込総合計");
     }
+
+    /**
+     * Creates the standard Korean output labels.
+     *
+     * @return labels written in Korean
+     */
+    public static OutputLabels korean() {
+        return new OutputLabels("세전 금액", "세후 금액", "세전 총액", "세후 총액");
+    }
 }

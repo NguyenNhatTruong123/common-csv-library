@@ -30,10 +30,11 @@ class CsvInvoiceCalculatorTest {
         assertEquals(5, cell(result, 2, 5), 0.001);
         assertEquals(6, cell(result, 2, 6), 0.001);
         try (var wb = WorkbookFactory.create(new ByteArrayInputStream(result))) {
-            assertEquals("Grand total before tax", wb.getSheetAt(0).getRow(3).getCell(0).getStringCellValue());
+            assertEquals("Grand total before tax", wb.getSheetAt(0).getRow(3).getCell(3).getStringCellValue());
+            assertEquals("Grand total after tax", wb.getSheetAt(0).getRow(4).getCell(3).getStringCellValue());
         }
-        assertEquals(25.5, cell(result, 3, 1), 0.001);
-        assertEquals(28.55, cell(result, 3, 3), 0.001);
+        assertEquals(25.5, cell(result, 3, 5), 0.001);
+        assertEquals(28.55, cell(result, 4, 6), 0.001);
     }
 
     @Test
@@ -44,6 +45,24 @@ class CsvInvoiceCalculatorTest {
         assertEquals(2.75, cell(result, 1, 5), 0.001);
         try (var wb = WorkbookFactory.create(new ByteArrayInputStream(result))) {
             assertEquals("Tổng trước thuế", wb.getSheetAt(0).getRow(0).getCell(4).getStringCellValue());
+        }
+    }
+
+    @Test
+    void parsesKoreanHeadersAndUsesKoreanLabels() throws Exception {
+        String csv = "품목명,수량,개당 가격,부가가치세,비고\n머그컵,2,3.50,10%,도자기";
+        byte[] result = CsvInvoiceCalculator.processCsv(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(7.00, cell(result, 1, 5), 0.001);
+        assertEquals(7.70, cell(result, 1, 6), 0.001);
+        try (var wb = WorkbookFactory.create(new ByteArrayInputStream(result))) {
+            var sheet = wb.getSheetAt(0);
+            assertEquals("세전 금액", sheet.getRow(0).getCell(5).getStringCellValue());
+            assertEquals("세후 금액", sheet.getRow(0).getCell(6).getStringCellValue());
+            assertEquals("세전 총액", sheet.getRow(2).getCell(3).getStringCellValue());
+            assertEquals("세후 총액", sheet.getRow(3).getCell(3).getStringCellValue());
+            assertEquals(7.00, sheet.getRow(2).getCell(5).getNumericCellValue(), 0.001);
+            assertEquals(7.70, sheet.getRow(3).getCell(6).getNumericCellValue(), 0.001);
         }
     }
 
