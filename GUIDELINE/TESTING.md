@@ -160,7 +160,7 @@ On success, Maven prints the path to each generated workbook. Open `manual-test/
 
 For the English sample CSV, the workbook should contain 24 product rows and 15 columns: the original 13 input columns plus `Total before tax` and `Total after tax`. The final grand-total row should show `467.66` before tax and `503.86` after tax. Check that all original informational columns are still present. Some notes contain quoted commas in the CSV; each should remain in a single cell without shifting columns. The Korean workbook should use Korean calculation and total labels; the Japanese, Vietnamese, and English workbooks should use labels in their corresponding languages.
 
-The language-specific samples should also contain at least 20 product rows. Calculate and record each file's expected grand totals from the generated data before reviewing the workbooks; do not reuse totals from shorter sample files.
+Each language-specific sample also contains 24 product rows. Their expected grand totals are `467.66` before tax and `503.86` after tax for each of `invoice-vi.csv`, `invoice-ja.csv`, and `invoice-ko.csv`.
 
 To check validation, change a quantity to `0`, a price to `abc`, or VAT to `150`. The program should report the CSV row and invalid field, and should not produce a successful workbook.
 
