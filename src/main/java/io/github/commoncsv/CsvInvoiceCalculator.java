@@ -185,10 +185,10 @@ public final class CsvInvoiceCalculator {
     }
 
     private static ColumnMapping detectMapping(List<String> headers) {
-        int name = find(headers, List.of("product", "product name", "item", "item name", "name", "tên mặt hàng", "tên sản phẩm", "sản phẩm", "商品名", "品名"));
-        int quantity = find(headers, List.of("quantity", "qty", "数量", "số lượng", "so luong"));
-        int price = find(headers, List.of("unit price", "price per unit", "price", "単価", "đơn giá", "don gia"));
-        int vat = find(headers, List.of("vat", "vat %", "vat percent", "tax", "tax rate", "税率", "thuế", "thuế suất", "thue", "thue suat"));
+        int name = find(headers, List.of("product", "product name", "item", "item name", "name", "tên mặt hàng", "tên sản phẩm", "sản phẩm", "商品名", "品名", "제품명", "상품명", "품명", "품목명"));
+        int quantity = find(headers, List.of("quantity", "qty", "数量", "số lượng", "so luong", "수량"));
+        int price = find(headers, List.of("unit price", "price per unit", "price", "単価", "đơn giá", "don gia", "단가", "개당 가격", "단위 가격"));
+        int vat = find(headers, List.of("vat", "vat %", "vat percent", "tax", "tax rate", "税率", "thuế", "thuế suất", "thue", "thue suat", "부가세", "부가가치세", "부가세율", "세율"));
 
         if (name < 0 || quantity < 0 || price < 0 || vat < 0) {
             throw new IllegalArgumentException("Could not detect all required columns from headers. Use process(data, mapping, labels) with explicit metadata.");
@@ -221,6 +221,10 @@ public final class CsvInvoiceCalculator {
 
     private static OutputLabels detectLabels(List<String> headers) {
         String joined = String.join(" ", headers).toLowerCase(Locale.ROOT);
+        if (joined.matches(".*\\p{IsHangul}.*")) {
+            return OutputLabels.korean();
+        }
+
         if (joined.matches(".*[\\p{IsHiragana}\\p{IsKatakana}\\p{IsHan}].*")) {
             return OutputLabels.japanese();
         }

@@ -48,6 +48,22 @@ class CsvInvoiceCalculatorTest {
     }
 
     @Test
+    void parsesKoreanHeadersAndUsesKoreanLabels() throws Exception {
+        String csv = "품목명,수량,개당 가격,부가가치세,비고\n머그컵,2,3.50,10%,도자기";
+        byte[] result = CsvInvoiceCalculator.processCsv(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(7.00, cell(result, 1, 5), 0.001);
+        assertEquals(7.70, cell(result, 1, 6), 0.001);
+        try (var wb = WorkbookFactory.create(new ByteArrayInputStream(result))) {
+            var sheet = wb.getSheetAt(0);
+            assertEquals("세전 금액", sheet.getRow(0).getCell(5).getStringCellValue());
+            assertEquals("세후 금액", sheet.getRow(0).getCell(6).getStringCellValue());
+            assertEquals("세전 총액", sheet.getRow(2).getCell(0).getStringCellValue());
+            assertEquals("세후 총액", sheet.getRow(2).getCell(2).getStringCellValue());
+        }
+    }
+
+    @Test
     void parsesQuotedCommaCsvAndPreservesEmbeddedComma() throws Exception {
         String csv = "Product,Quantity,Unit Price,VAT,Note\n\"Pen, blue\",1,2.50,0,\"a, b\"";
         byte[] result = CsvInvoiceCalculator.processCsv(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
