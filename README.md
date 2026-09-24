@@ -53,32 +53,10 @@ byte[] xlsx = CsvInvoiceCalculator.process(table, columns, labels);
 - Invalid rows fail with `IllegalArgumentException` identifying the CSV row number (header is row 1) and field. Uneven row widths and invalid metadata indexes also fail fast.
 - All prices are assumed to use the same currency and unit price is before tax. The library does not perform currency conversion or infer units.
 
-## Build, test, and package locally
+## Develop and distribute
 
-Run these commands in the project directory:
-
-```shell
-mvn clean verify
-mvn package
-```
-
-The JAR is created under `target/`. To consume it from another Maven project before publishing to a repository, build and install it into your own local Maven repository:
-
-```shell
-mvn clean install
-```
-
-Then add this dependency to the consuming project's `pom.xml`:
-
-```xml
-<dependency>
-  <groupId>io.github.commoncsv</groupId>
-  <artifactId>common-csv-library</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-</dependency>
-```
-
-For sharing with a team, use the organization's approved Maven repository (or publish a release artifact through its release process). Each organization should build and publish from a reviewed source revision so that dependency and release provenance remain under its control.
+- [TESTING.md](GUIDELINE/TESTING.md): run the included tests, inspect reports, and add your own test cases.
+- [PACKAGING.md](GUIDELINE/PACKAGING.md): build the JAR and install it into a local Maven repository for use in another project.
 
 ## Extension proposal
 
