@@ -46,7 +46,7 @@ Then refresh Maven in your IDE or build that project:
 mvn clean compile
 ```
 
-The project can now import `io.github.commoncsv.CsvInvoiceCalculator` and other public classes. See the examples in [README.md](README.md).
+The project can now import `io.github.commoncsv.CsvInvoiceCalculator` and other public classes. See the examples in [README.md](../README.md).
 
 ## 4. Install a changed version
 
